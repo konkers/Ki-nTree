@@ -86,6 +86,7 @@ CONFIG_CATEGORIES = os.path.join(CONFIG_USER_FILES, 'categories.yaml')
 CONFIG_PARAMETERS = os.path.join(CONFIG_USER_FILES, 'parameters.yaml')
 CONFIG_PARAMETERS_FILTERS = os.path.join(
     CONFIG_USER_FILES, 'parameters_filters.yaml')
+MAGIC_SETTINGS = os.path.join(CONFIG_USER_FILES, 'magic_settings.yaml')
 
 # INTERNAL PART NUMBERS
 CONFIG_IPN_PATH = os.path.join(CONFIG_USER_FILES, 'internal_part_number.yaml')

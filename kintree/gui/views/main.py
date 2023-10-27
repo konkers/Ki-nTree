@@ -280,6 +280,8 @@ class PartSearchView(MainView):
         hidden_fields = {
             'searched_part_number': '',
             'custom_part': None,
+            'supplier_category': '',
+            'supplier_subcategory': '',
         }
         self.fields['parameter_form'] = {}
         return super().reset_view(e, ignore=ignore, hidden=hidden_fields)
@@ -354,6 +356,10 @@ class PartSearchView(MainView):
                     # and pricing
                     if part_supplier_info.get('pricing', None):
                         self.data['pricing'] = part_supplier_info['pricing']
+                    if part_supplier_info.get('category', None):
+                        self.data['supplier_category'] = part_supplier_info['category']
+                    if part_supplier_info.get('subcategory', None):
+                        self.data['supplier_subcategory'] = part_supplier_info['subcategory']
 
             # Add to data buffer
             self.push_data()
@@ -376,6 +382,8 @@ class PartSearchView(MainView):
         hidden_fields = {
             'searched_part_number': self.fields['part_number'].value,
             'custom_part': self.data.get('custom_part', None),
+            'supplier_category': self.data.get('supplier_category', ''),
+            'supplier_subcategory': self.data.get('supplier_subcategory', ''),
         }
         for key, field in self.fields['search_form'].items():
             self.data[key] = field.value
@@ -504,6 +512,13 @@ class InventreeView(MainView):
             icon=ft.icons.REPLAY,
             disabled=False,
         ),
+        'magic_categories': ft.ElevatedButton(
+            'Magically Detect Categories',
+            width=GUI_PARAMS['button_width'] * 2.6,
+            height=36,
+            icon=ft.icons.REPLAY,
+            disabled=False,
+        ),
         'Category': DropdownWithSearch(
             label='Category',
             dr_width=GUI_PARAMS['textfield_width'],
@@ -518,6 +533,18 @@ class InventreeView(MainView):
             dense=GUI_PARAMS['textfield_dense'],
             # disabled=settings.CONFIG_IPN.get('IPN_CATEGORY_CODE', False),
             options=[],
+        ),
+        'Symbol': ft.TextField(
+            label='Symbol',
+            width=GUI_PARAMS['textfield_width'] / 2 - 5,
+            dense=GUI_PARAMS['textfield_dense'],
+            visible=True,
+        ),
+        'Footprint': ft.TextField(
+            label='Footprint',
+            width=GUI_PARAMS['textfield_width'] / 2 - 5,
+            dense=GUI_PARAMS['textfield_dense'],
+            visible=True,
         ),
         'Create New Code': SwitchWithRefs(
             label='Create New Code',
@@ -601,6 +628,9 @@ class InventreeView(MainView):
         # Load category button
         self.fields['load_categories'].disabled = alt_visible
         self.fields['load_categories'].update()
+
+        self.fields['magic_categories'].disabled = alt_visible
+        self.fields['magic_categories'].update()
 
         # Category row visibility
         self.category_row_ref.current.visible = not alt_visible
@@ -698,6 +728,25 @@ class InventreeView(MainView):
         self.page.splash.visible = False
         self.page.update()
 
+    def magic_categories(self, e):
+        part_info = data_from_views['Part Search']
+        metadata = inventree_interface.magically_find_metadata(part_info)
+        if 'category' in metadata:
+            prefix = "-" * (len(metadata['category']) - 1)
+            category = f'{prefix} {"/".join(metadata["category"])}'
+            cprint(f'\n[MAIN]\t{category}', silent=False)
+            self.fields['Category'].value = category
+            self.fields['Category'].update()
+            self.process_category()
+        if 'symbol' in metadata:
+            self.fields['Symbol'].value = metadata['symbol']
+            self.fields['Symbol'].update()
+        if 'footprint' in metadata:
+            self.fields['Footprint'].value = metadata['footprint']
+            self.fields['Footprint'].update()
+
+        self.page.update()
+
     def create_ipn_code(self, e):
         # Get switch value
         new_code = True
@@ -716,11 +765,14 @@ class InventreeView(MainView):
         self.fields['Category'].options = self.get_category_options()
         self.fields['Category'].on_change = self.process_category
         self.fields['load_categories'].on_click = self.reload_categories
+        self.fields['magic_categories'].on_click = self.magic_categories
         # Category codes
         self.fields['IPN: Category Code'].options = self.get_code_options()
         self.fields['IPN: Category Code'].on_change = self.push_data
         self.fields['Create New Code'].on_change = self.create_ipn_code
         self.fields['New Category Code'].on_change = self.push_data
+        self.fields['Symbol'].on_change = self.push_data
+        self.fields['Footprint'].on_change = self.push_data
         # Other Settings
         self.fields['check_existing'].on_change = self.process_button
         # Alternate fields
@@ -737,6 +789,13 @@ class InventreeView(MainView):
                         self.fields['enable'],
                         self.fields['alternate'],
                         self.fields['load_categories'],
+                    ],
+                    width=GUI_PARAMS['dropdown_width'],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                ),
+                ft.Row(
+                    [
+                        self.fields['magic_categories'],
                     ],
                     width=GUI_PARAMS['dropdown_width'],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -766,6 +825,12 @@ class InventreeView(MainView):
                                 ft.Row(
                                     [
                                         self.fields['check_existing'],
+                                    ],
+                                ),
+                                ft.Row(
+                                    [
+                                        self.fields['Symbol'],
+                                        self.fields['Footprint'],
                                     ],
                                 ),
                             ],
@@ -1294,6 +1359,12 @@ class CreateView(MainView):
                     else:
                         part_info['category_code'] = data_from_views['InvenTree'].get('IPN: Category Code', '')
                 
+                # If we didn't create a KiCad part, use footprint and symbol from inventree view.
+                if symbol == None:
+                    symbol = data_from_views['InvenTree'].get('Symbol', None)
+                if footprint == None:
+                    footprint = data_from_views['InvenTree'].get('Footprint', None)
+
                 # Create new part
                 new_part, part_pk, part_info = inventree_interface.inventree_create(
                     part_info=part_info,

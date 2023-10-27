@@ -463,3 +463,8 @@ def load_category_parameters_filters(category: str, supplier_config_path: str) -
 
     # print(parameters_filters)
     return parameters_filters
+
+def load_magic_settings(magic_settings_path: str) -> dict:
+    ''' Load Supplier category mapping from Supplier settings file (inversed relation) '''
+    magic_settings = load_file(magic_settings_path)
+    return magic_settings

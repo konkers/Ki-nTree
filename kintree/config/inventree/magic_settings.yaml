@@ -1,0 +1,35 @@
+-
+  match: {
+    supplier_category: "Discrete Semiconductor Products",
+    supplier_subcategory: "Transistors - FETs, MOSFETs - Single FETs, MOSFETs - FETs, MOSFETs - Single FETs, MOSFETs",
+    parameters: {
+      FET Type: "N-Channel"
+    }
+  }
+  metadata: {
+    category: ["Transistors", "N-Channel FET"],
+  }
+-
+ match: {
+    supplier_category: "Capacitors",
+    supplier_subcategory: "Ceramic Capacitors",
+    parameters: {
+      Package / Case: "0603 (1608 Metric)"
+    }
+ }
+ metadata: {
+    category: ["Capacitors", "Ceramic"],
+    footprint: "Capacitor_SMD:C_0603_1608Metric",
+ }
+-
+ match: {
+    supplier_category: "Capacitors",
+    supplier_subcategory: "Ceramic Capacitors",
+    parameters: {
+      Package / Case: "0402 (1005 Metric)"
+    }
+ }
+ metadata: {
+    category: ["Capacitors", "Ceramic"],
+    footprint: "Capacitor_SMD:C_0402_1005Metric",
+ }

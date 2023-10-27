@@ -100,6 +100,27 @@ def build_category_tree(reload=False, category=None) -> dict:
     return inventree_categories
 
 
+def does_dict_match(pattern: dict, data: dict) -> bool:
+    for key, value in pattern.items():
+        if isinstance(value, dict):
+            if not does_dict_match(value, data[key]):
+                return False
+        else:
+            if not key in data:
+                return False
+            if data[key] != value:
+                return False
+    return True
+
+
+def magically_find_metadata(search_info: dict) -> dict:
+    magic_settings = config_interface.load_magic_settings(settings.MAGIC_SETTINGS)
+    for setting in magic_settings:
+        if does_dict_match(setting['match'], search_info):
+            return setting['metadata']
+
+    return {}
+
 def get_categories_from_supplier_data(part_info: dict, supplier_only=False) -> list:
     ''' Find categories from part supplier data, use "somewhat automatic" matching '''
     from thefuzz import fuzz
